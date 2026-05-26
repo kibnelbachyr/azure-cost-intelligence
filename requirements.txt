@@ -1,0 +1,16 @@
+# Azure SDK core
+azure-identity>=1.17.0
+azure-mgmt-costmanagement>=4.0.0
+azure-mgmt-advisor>=9.0.0
+azure-mgmt-resourcegraph>=8.0.0
+azure-mgmt-resource>=23.0.0
+
+# Azure AI Foundry (Agents)
+azure-ai-projects>=1.0.0b11
+
+# Utilities
+python-dotenv>=1.0.0
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+rich>=13.7.0          # pretty console output
+tenacity>=8.3.0       # retry logic
