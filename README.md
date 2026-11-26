@@ -1,5 +1,11 @@
 # Azure Cost Optimization Agent
 
+> Experimental MVP. Recommendations are advisory, not authorization to change or delete resources. Risk and savings values are heuristic, not validated financial or operational assessments. Confirm ownership, dependencies, recovery, actual prices and explicit human approval before acting. No production or live-model assurance is claimed.
+
+## Offline regression checks
+
+With Python 3.11, run `python -m unittest discover -s tests -v` from the repository root. These tests exercise the deterministic recommendation engine using fictional inputs; no Azure credentials, dependency installation or cloud calls are required. The CI workflow runs these checks only, not deployments. Full SDK compatibility, real cost calculations and model output remain unverified.
+
 An MVP AI agent built on **Azure AI Foundry** that analyses your Azure subscription
 costs and surfaces concrete, prioritised optimisation recommendations in plain English.
 

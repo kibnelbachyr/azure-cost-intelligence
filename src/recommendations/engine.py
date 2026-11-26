@@ -44,8 +44,9 @@ def _classify_effort(text: str) -> str:
 
 
 def _classify_risk(text: str) -> str:
+    """Conservative heuristic: destructive language takes precedence."""
     lower = text.lower()
-    for level in ("low", "medium", "high"):
+    for level in ("high", "medium", "low"):
         if any(kw in lower for kw in _RISK_KEYWORDS[level]):
             return level
     return "medium"
@@ -197,7 +198,7 @@ class RecommendationEngine:
                 category="Cost",
                 impact="Medium",
                 effort="low",
-                risk="low",
+                risk="high",
                 estimated_monthly_savings=None,
                 savings_currency="USD",
                 recommended_actions=[
@@ -205,7 +206,7 @@ class RecommendationEngine:
                     "Consider auto-shutdown schedule for dev/test VMs.",
                 ],
                 impacted_resource=vm.get("id"),
-                trade_offs=["Verify the VM is not needed before deletion."],
+                trade_offs=["Confirm ownership, dependencies, backup/recovery and business impact; obtain explicit approval before shutdown or deletion."],
             )
             result.append(rec)
 
@@ -223,14 +224,14 @@ class RecommendationEngine:
                 category="Cost",
                 impact="Low",
                 effort="low",
-                risk="low",
+                risk="high",
                 estimated_monthly_savings=estimated,
                 savings_currency="USD",
                 recommended_actions=[
                     f"Snapshot and delete disk '{disk.get('name')}' if data is no longer needed.",
                 ],
                 impacted_resource=disk.get("id"),
-                trade_offs=["Take a snapshot before deleting in case data recovery is needed."],
+                trade_offs=["Verify ownership, dependencies, retention and recoverability before any deletion; obtain explicit approval."],
             )
             result.append(rec)
 
@@ -247,14 +248,14 @@ class RecommendationEngine:
                 category="Cost",
                 impact="Low",
                 effort="low",
-                risk="low",
+                risk="high",
                 estimated_monthly_savings=estimated,
                 savings_currency="USD",
                 recommended_actions=[
-                    f"Delete public IP '{pip.get('name')}' if it is no longer needed.",
+                    f"Delete public IP '{pip.get('name')}' only after reviewing ownership and dependencies.",
                 ],
                 impacted_resource=pip.get("id"),
-                trade_offs=[],
+                trade_offs=["Confirm external consumers, allowlists, DNS and recovery requirements; obtain explicit approval."],
             )
             result.append(rec)
 
