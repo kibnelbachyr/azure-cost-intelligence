@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "note": "Fictional normalized explicit-monthly inputs, not actual Advisor SDK responses.",
+  "cost_summary": {
+    "currency": "EUR"
+  },
+  "recommendations": [
+    {
+      "id": "eur",
+      "problem": "Review reserved instance",
+      "solution": "Review reservation eligibility",
+      "impact": "Low",
+      "estimated_monthly_savings": 25,
+      "savings_currency": "EUR",
+      "resource_metadata": {
+        "resource_id": "fictional-resource"
+      }
+    },
+    {
+      "id": "usd",
+      "problem": "Review reserved instance",
+      "solution": "Review reservation eligibility",
+      "impact": "Low",
+      "estimated_monthly_savings": 900,
+      "savings_currency": "USD",
+      "resource_metadata": {
+        "resource_id": "fictional-resource"
+      }
+    },
+    {
+      "id": "unknown",
+      "problem": "Delete unused disk",
+      "solution": "Delete after review",
+      "impact": "High",
+      "estimated_monthly_savings": null,
+      "savings_currency": null
+    }
+  ],
+  "expected": {
+    "order": [
+      "eur",
+      "unknown",
+      "usd"
+    ],
+    "eur_score": 37.5,
+    "usd_score": null,
+    "unknown_risk": "high",
+    "aggregate": null
+  }
+}

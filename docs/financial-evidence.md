@@ -16,6 +16,8 @@ Spend-driver observations require matching scope, dates and currency. The engine
 
 ## Reproduction and limits
 
-Run `python -m unittest discover -s tests -v` on Python 3.11; no credentials, SDK installation or real service required for this suite. It exercises pure financial helpers, engine and injected tool handlers. It does not validate actual Azure SDK responses, network security, authorization or LLM adherence. The current client-managed Responses loop sends instructions on every request and does not reuse or modify existing hosted agents. Live SDK compatibility, provider pricing/period mapping and a real evaluation remain separate gates. No license or publication status is changed.
+Run `python -m unittest discover -s tests -v` on Python 3.11; no credentials, SDK installation or real service required for this suite. It exercises pure financial helpers, engine and injected tool handlers. It does not validate actual Azure SDK responses, network security, authorization or LLM adherence. The current client-managed Responses loop sends instructions on every request and does not reuse or modify existing hosted agents. Live SDK compatibility, provider pricing/period mapping and live-model evaluation remain separate gates. No license or publication status is changed.
 
 The separate [SDK contract suite](sdk-contracts.md) exercises real installed management SDKs with synthetic HTTP responses, not Azure services. Cost and Resource Graph pagination are rejected rather than silently truncated. Foundry orchestration has a separate synthetic contract suite; the [version lock and advisory audit](dependency-security.md) covers application packages.
+
+The [versioned FinOps conformance evaluation](evaluation.md) checks structured evidence across synthetic provider HTTP paths. It does not measure live-model quality.
