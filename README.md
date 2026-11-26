@@ -4,7 +4,7 @@ Experimental advisory-only MVP for Azure cloud economics. Combines actual cost d
 
 ## Architecture
 
-See the [architecture review](docs/architecture-review.md), [threat model](docs/threat-model.md), [security policy](SECURITY.md) and [experimental release gate](docs/release-readiness.md). The owner has approved Apache-2.0; see [LICENSE](LICENSE). No release has been published.
+See the [architecture review](docs/architecture-review.md), [threat model](docs/threat-model.md), [security policy](SECURITY.md) and [experimental release gate](docs/release-readiness.md). The [v0.1.0 experimental pre-release](https://github.com/kibnelbachyr/azure-cost-intelligence/releases/tag/v0.1.0) is published under [Apache-2.0](LICENSE). See the [release evidence record](docs/evidence/v0.1.0.md).
 
 ```mermaid
 flowchart LR
@@ -66,4 +66,4 @@ Every question is independent, including interactive mode; restate the scope. Li
 - Management and Responses HTTP fixture coverage is not live Azure compatibility, actual billing accuracy, KQL verification or model quality.
 - Cost/Graph partial pages fail closed. No price catalog, realized-savings measurement, currency conversion or automated remediation.
 - Local bounds limit model requests and tool calls per question, not total runtime or all downstream SDK retries. Not an authenticated multi-tenant boundary.
-- Licensed under Apache-2.0; no experimental release published yet. See [illustrative example](examples/sample_responses.md).
+- Licensed under Apache-2.0; v0.1.0 is an experimental pre-release, not a production release. See [illustrative example](examples/sample_responses.md).
