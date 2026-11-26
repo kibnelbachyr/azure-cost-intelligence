@@ -16,27 +16,29 @@ class FoundryResponsesProvider:
         self._client = project.get_openai_client(**kwargs)
 
     @classmethod
-    def from_settings(cls):
+    def from_settings(cls, *, settings=None, credential=None):
         from azure.ai.projects import AIProjectClient
-        from azure.identity import ManagedIdentityCredential, ClientSecretCredential
         from ..config import get_settings
+        from ..config.identity import build_credential
 
-        cfg = get_settings()
+        cfg = settings if settings is not None else get_settings()
         if not cfg.azure_ai_project_endpoint:
             raise ValueError("Set AZURE_AI_PROJECT_ENDPOINT to the Foundry project endpoint.")
-        credential = (
-            ManagedIdentityCredential(client_id=cfg.azure_client_id)
-            if cfg.use_managed_identity and cfg.azure_client_id
-            else ManagedIdentityCredential()
-            if cfg.use_managed_identity
-            else ClientSecretCredential(cfg.azure_tenant_id, cfg.azure_client_id, cfg.azure_client_secret)
-        )
-        project = AIProjectClient(endpoint=cfg.azure_ai_project_endpoint, credential=credential)
+        owned = credential is None
+        if owned:
+            credential = build_credential(cfg)
+        project = None
         try:
-            return cls(project, model=cfg.azure_openai_deployment_name, credential=credential)
+            project = AIProjectClient(endpoint=cfg.azure_ai_project_endpoint, credential=credential)
+            return cls(project, model=cfg.azure_openai_deployment_name,
+                       credential=credential if owned else None)
         except Exception:
-            project.close()
-            credential.close()
+            try:
+                if project is not None:
+                    project.close()
+            finally:
+                if owned:
+                    credential.close()
             raise
 
     def respond(self, items: list[dict], tools: list[dict]) -> dict:

@@ -13,11 +13,11 @@ import logging
 from typing import Any
 
 from azure.core.exceptions import HttpResponseError
-from azure.identity import DefaultAzureCredential, ClientSecretCredential
 from azure.mgmt.advisor import AdvisorManagementClient
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from ..config import get_settings
+from ..config.identity import build_credential
 from ..financial_evidence import provider_savings, savings_evidence_summary
 
 log = logging.getLogger(__name__)
@@ -28,17 +28,6 @@ COST_CATEGORY = "Cost"
 ALL_CATEGORIES = [COST_CATEGORY, "HighAvailability", "Security", "OperationalExcellence", "Performance"]
 
 IMPACT_SCORE = {"High": 3, "Medium": 2, "Low": 1}
-
-
-def _build_credential():
-    cfg = get_settings()
-    if cfg.use_managed_identity:
-        return DefaultAzureCredential()
-    return ClientSecretCredential(
-        tenant_id=cfg.azure_tenant_id,
-        client_id=cfg.azure_client_id,
-        client_secret=cfg.azure_client_secret,
-    )
 
 
 def _normalise(rec: Any) -> dict[str, Any]:
@@ -77,11 +66,32 @@ class AdvisorService:
     Retrieves Azure Advisor recommendations, with a focus on cost category.
     """
 
-    def __init__(self, *, client=None, settings=None) -> None:
+    def __init__(self, *, client=None, settings=None, credential=None) -> None:
         cfg = settings if settings is not None else get_settings()
-        self._client = client if client is not None else AdvisorManagementClient(
-            credential=_build_credential(), subscription_id=cfg.azure_subscription_id,
-        )
+        self._owned_credential = None
+        if client is not None:
+            if credential is not None:
+                raise ValueError("Inject a client or a credential, not both.")
+            self._client = client
+            self._owns_client = False
+        else:
+            self._owns_client = True
+            if credential is None:
+                credential = self._owned_credential = build_credential(cfg)
+            try:
+                self._client = AdvisorManagementClient(credential=credential, subscription_id=cfg.azure_subscription_id)
+            except Exception:
+                if self._owned_credential is not None:
+                    self._owned_credential.close()
+                raise
+
+    def close(self):
+        try:
+            if self._owns_client:
+                self._client.close()
+        finally:
+            if self._owned_credential is not None:
+                self._owned_credential.close()
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10),
            retry=retry_if_exception_type(HttpResponseError), reraise=True)
@@ -90,7 +100,7 @@ class AdvisorService:
             recs = self._client.recommendations.list(filter=filter_expr)
             return [_normalise(r) for r in recs]
         except HttpResponseError as exc:
-            log.error("Advisor API error: %s", exc.message)
+            log.warning("Advisor query failed (HTTP %s)", exc.status_code)
             raise
 
     def get_cost_recommendations(
@@ -140,16 +150,3 @@ class AdvisorService:
             "total_recommendations": len(all_recs),
             "recommendations": all_recs,
         }
-
-    def refresh_recommendations(self) -> str:
-        """
-        Trigger Advisor to generate fresh recommendations.
-        This is async — the new data is typically available within minutes.
-        """
-        cfg = get_settings()
-        try:
-            self._client.recommendations.generate()
-            return "Recommendation generation triggered successfully."
-        except HttpResponseError as exc:
-            log.warning("Could not trigger Advisor refresh: %s", exc.message)
-            return f"Could not trigger refresh: {exc.message}"

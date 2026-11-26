@@ -1,9 +1,10 @@
-# Direct SDK versions for the synthetic HTTP contract suite (not a transitive lock).
-azure-identity==1.27.0
-azure-mgmt-costmanagement==5.0.0
-azure-mgmt-advisor==9.0.1
-azure-mgmt-resourcegraph==8.0.1
-python-dotenv>=1.0.0
-pydantic>=2.7.0,<3
-pydantic-settings>=2.3.0,<3
-tenacity>=8.3.0,<10
+# Management-only inputs constrained to the application baseline.
+-c requirements.lock.txt
+azure-identity
+azure-mgmt-costmanagement
+azure-mgmt-advisor
+azure-mgmt-resourcegraph
+python-dotenv
+pydantic
+pydantic-settings
+tenacity

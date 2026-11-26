@@ -14,32 +14,44 @@ import logging
 from typing import Any
 
 from azure.core.exceptions import HttpResponseError
-from azure.identity import DefaultAzureCredential, ClientSecretCredential
 from azure.mgmt.resourcegraph import ResourceGraphClient
 from azure.mgmt.resourcegraph.models import QueryRequest, QueryRequestOptions
 
 from ..config import get_settings
+from ..config.identity import build_credential
 
 log = logging.getLogger(__name__)
-
-
-def _build_credential():
-    cfg = get_settings()
-    if cfg.use_managed_identity:
-        return DefaultAzureCredential()
-    return ClientSecretCredential(
-        tenant_id=cfg.azure_tenant_id,
-        client_id=cfg.azure_client_id,
-        client_secret=cfg.azure_client_secret,
-    )
 
 
 class ResourceGraphService:
     """Run KQL queries against Azure Resource Graph."""
 
-    def __init__(self, *, client=None, settings=None) -> None:
+    def __init__(self, *, client=None, settings=None, credential=None) -> None:
         self._cfg = settings if settings is not None else get_settings()
-        self._client = client if client is not None else ResourceGraphClient(credential=_build_credential())
+        self._owned_credential = None
+        if client is not None:
+            if credential is not None:
+                raise ValueError("Inject a client or a credential, not both.")
+            self._client = client
+            self._owns_client = False
+        else:
+            self._owns_client = True
+            if credential is None:
+                credential = self._owned_credential = build_credential(self._cfg)
+            try:
+                self._client = ResourceGraphClient(credential=credential)
+            except Exception:
+                if self._owned_credential is not None:
+                    self._owned_credential.close()
+                raise
+
+    def close(self):
+        try:
+            if self._owns_client:
+                self._client.close()
+        finally:
+            if self._owned_credential is not None:
+                self._owned_credential.close()
 
     def _run_query(self, kql: str, top: int = 100) -> list[dict[str, Any]]:
         request = QueryRequest(
@@ -58,7 +70,7 @@ class ResourceGraphService:
                 raise ValueError("Resource Graph count does not match returned records.")
             return result.data
         except HttpResponseError as exc:
-            log.error("Resource Graph query failed: %s", exc.message)
+            log.warning("Resource Graph query failed (HTTP %s)", exc.status_code)
             raise
 
     # ── pre-built queries ─────────────────────────────────────────────────────
