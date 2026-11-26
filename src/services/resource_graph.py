@@ -37,19 +37,26 @@ def _build_credential():
 class ResourceGraphService:
     """Run KQL queries against Azure Resource Graph."""
 
-    def __init__(self) -> None:
-        self._client = ResourceGraphClient(credential=_build_credential())
-        self._cfg = get_settings()
+    def __init__(self, *, client=None, settings=None) -> None:
+        self._cfg = settings if settings is not None else get_settings()
+        self._client = client if client is not None else ResourceGraphClient(credential=_build_credential())
 
     def _run_query(self, kql: str, top: int = 100) -> list[dict[str, Any]]:
         request = QueryRequest(
             subscriptions=[self._cfg.azure_subscription_id],
             query=kql,
-            options=QueryRequestOptions(top=top),
+            options=QueryRequestOptions(top=top, result_format="objectArray", allow_partial_scopes=False),
         )
         try:
             result = self._client.resources(request)
-            return result.data if result.data else []
+            truncated = getattr(result.result_truncated, "value", result.result_truncated)
+            if str(truncated).lower() != "false" or result.skip_token or result.total_records != result.count:
+                raise ValueError("Partial Resource Graph result; pagination not implemented.")
+            if not isinstance(result.data, list) or any(not isinstance(row, dict) for row in result.data):
+                raise ValueError("Unexpected Resource Graph response format.")
+            if len(result.data) != result.count:
+                raise ValueError("Resource Graph count does not match returned records.")
+            return result.data
         except HttpResponseError as exc:
             log.error("Resource Graph query failed: %s", exc.message)
             raise
@@ -58,8 +65,7 @@ class ResourceGraphService:
 
     def get_idle_vms(self) -> dict[str, Any]:
         """
-        List VMs that are currently deallocated (stopped but still billed
-        for managed disks) or have no recent CPU metrics.
+        List VMs reported stopped or deallocated; not a CPU utilization analysis.
         """
         kql = """
         Resources
@@ -78,7 +84,7 @@ class ResourceGraphService:
         kql = """
         Resources
         | where type =~ 'Microsoft.Compute/disks'
-        | where isnull(properties.managedBy) or properties.managedBy == ''
+        | where tostring(managedBy) == '' and tostring(properties.diskState) =~ 'Unattached'
         | project id, name, resourceGroup, location,
                   sku=tostring(sku.name),
                   sizeGb=toint(properties.diskSizeGB),

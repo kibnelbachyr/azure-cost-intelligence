@@ -19,9 +19,8 @@ from azure.mgmt.costmanagement.models import (
     QueryTimePeriod,
     QueryAggregation,
     QueryGrouping,
-    GranularityType,
 )
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from ..config import get_settings
 from ..financial_evidence import validated_cost_rows
@@ -41,11 +40,11 @@ def _build_credential():
 
 
 def _subscription_scope(subscription_id: str) -> str:
-    return f"subscriptions/{subscription_id}"
+    return f"/subscriptions/{subscription_id}"
 
 
 def _rg_scope(subscription_id: str, resource_group: str) -> str:
-    return f"subscriptions/{subscription_id}/resourceGroups/{resource_group}"
+    return f"/subscriptions/{subscription_id}/resourceGroups/{resource_group}"
 
 
 class CostManagementService:
@@ -55,9 +54,9 @@ class CostManagementService:
     Preserve a single explicit provider currency; reject missing/mixed currency.
     """
 
-    def __init__(self) -> None:
-        self._client = CostManagementClient(credential=_build_credential())
-        self._cfg = get_settings()
+    def __init__(self, *, client=None, settings=None) -> None:
+        self._cfg = settings if settings is not None else get_settings()
+        self._client = client if client is not None else CostManagementClient(credential=_build_credential())
 
     # ── helpers ───────────────────────────────────────────────────────────────
 
@@ -67,7 +66,8 @@ class CostManagementService:
         start = now - timedelta(days=lookback_days)
         return start.strftime("%Y-%m-%d"), now.strftime("%Y-%m-%d")
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10),
+           retry=retry_if_exception_type(HttpResponseError), reraise=True)
     def _query(self, scope: str, definition: QueryDefinition) -> list[dict[str, Any]]:
         try:
             result = self._client.query.usage(scope=scope, parameters=definition)
@@ -76,13 +76,24 @@ class CostManagementService:
             raise
 
         # Do not silently report a partial page as total actual spend.
-        if getattr(result, "next_link", None):
+        if result is None:
+            return []  # SDK maps HTTP 204 to None.
+        props = result.properties
+        if props is None:
+            raise ValueError("Cost result is missing its properties envelope.")
+        if props.next_link:
             raise ValueError("Paginated cost result requires explicit pagination support.")
-        if not result.rows:
+        if props.rows is None:
+            raise ValueError("Cost result is missing its rows.")
+        if not props.rows:
             return []
 
-        columns = [c.name for c in result.columns]
-        return [dict(zip(columns, row)) for row in result.rows]
+        columns = [c.name for c in (props.columns or [])]
+        if len(columns) != len(set(columns)) or not {"Cost", "Currency"}.issubset(columns):
+            raise ValueError("Cost result columns are missing or ambiguous.")
+        if any(len(row) != len(columns) for row in props.rows):
+            raise ValueError("Cost result row does not match the column schema.")
+        return [dict(zip(columns, row)) for row in props.rows]
 
     # ── public API ────────────────────────────────────────────────────────────
 
@@ -109,12 +120,15 @@ class CostManagementService:
 
         scope = _rg_scope(sub_id, resource_group) if resource_group else _subscription_scope(sub_id)
 
-        gran = GranularityType.MONTHLY if granularity == "Monthly" else GranularityType.DAILY
+        if granularity not in ("Monthly", "Daily", "None"):
+            raise ValueError("Unsupported cost query granularity.")
+        gran = granularity
 
         definition = QueryDefinition(
             type="ActualCost",
             timeframe="Custom",
-            time_period=QueryTimePeriod(from_property=from_date, to=to_date),
+            time_period=QueryTimePeriod(from_property=datetime.fromisoformat(from_date).replace(tzinfo=timezone.utc),
+                                        to=datetime.fromisoformat(to_date).replace(tzinfo=timezone.utc)),
             dataset=QueryDataset(
                 granularity=gran,
                 aggregation={"totalCost": QueryAggregation(name="Cost", function="Sum")},
@@ -159,9 +173,10 @@ class CostManagementService:
         definition = QueryDefinition(
             type="ActualCost",
             timeframe="Custom",
-            time_period=QueryTimePeriod(from_property=from_date, to=to_date),
+            time_period=QueryTimePeriod(from_property=datetime.fromisoformat(from_date).replace(tzinfo=timezone.utc),
+                                        to=datetime.fromisoformat(to_date).replace(tzinfo=timezone.utc)),
             dataset=QueryDataset(
-                granularity=GranularityType.NONE,
+                granularity="None",
                 aggregation={"totalCost": QueryAggregation(name="Cost", function="Sum")},
                 grouping=[QueryGrouping(type="Dimension", name=group_by)],
             ),
@@ -209,15 +224,16 @@ class CostManagementService:
         definition = QueryDefinition(
             type="ActualCost",
             timeframe="Custom",
-            time_period=QueryTimePeriod(from_property=from_date, to=to_date),
+            time_period=QueryTimePeriod(from_property=datetime.fromisoformat(from_date).replace(tzinfo=timezone.utc),
+                                        to=datetime.fromisoformat(to_date).replace(tzinfo=timezone.utc)),
             dataset=QueryDataset(
-                granularity=GranularityType.NONE,
+                granularity="None",
                 aggregation={"totalCost": QueryAggregation(name="Cost", function="Sum")},
                 filter=QueryFilter(
                     tags=QueryComparisonExpression(
                         name=tag_name,
                         operator="In",
-                        values=[tag_value],
+                        values_property=[tag_value],
                     )
                 ),
             ),

@@ -17,3 +17,5 @@ Spend-driver observations require matching scope, dates and currency. The engine
 ## Reproduction and limits
 
 Run `python -m unittest discover -s tests -v` on Python 3.11; no credentials, SDK installation or real service required for this suite. It exercises pure financial helpers, engine and injected tool handlers. It does not validate actual Azure SDK responses, network security, authorization or LLM adherence. Existing remote Foundry agents may retain older instructions; updating/recreating those agents is outside offline verification. Live SDK compatibility, dependency locking/audit, provider pricing/period mapping and a real evaluation remain separate gates. No license or publication status is changed.
+
+The separate [SDK contract suite](sdk-contracts.md) exercises real installed management SDKs with synthetic HTTP responses, not Azure services. Cost and Resource Graph pagination are rejected rather than silently truncated. Foundry SDK migration and full dependency audit remain open.

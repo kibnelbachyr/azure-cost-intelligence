@@ -15,7 +15,7 @@ from typing import Any
 from azure.core.exceptions import HttpResponseError
 from azure.identity import DefaultAzureCredential, ClientSecretCredential
 from azure.mgmt.advisor import AdvisorManagementClient
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from ..config import get_settings
 from ..financial_evidence import provider_savings, savings_evidence_summary
@@ -77,14 +77,14 @@ class AdvisorService:
     Retrieves Azure Advisor recommendations, with a focus on cost category.
     """
 
-    def __init__(self) -> None:
-        cfg = get_settings()
-        self._client = AdvisorManagementClient(
-            credential=_build_credential(),
-            subscription_id=cfg.azure_subscription_id,
+    def __init__(self, *, client=None, settings=None) -> None:
+        cfg = settings if settings is not None else get_settings()
+        self._client = client if client is not None else AdvisorManagementClient(
+            credential=_build_credential(), subscription_id=cfg.azure_subscription_id,
         )
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10),
+           retry=retry_if_exception_type(HttpResponseError), reraise=True)
     def _list_recommendations(self, filter_expr: str | None = None) -> list[dict[str, Any]]:
         try:
             recs = self._client.recommendations.list(filter=filter_expr)
@@ -105,6 +105,10 @@ class AdvisorService:
         """
         filter_expr = f"Category eq '{COST_CATEGORY}'"
         if resource_group:
+            # Azure resource-group names cannot contain single quotes.
+            import re
+            if not re.fullmatch(r"[\w.()-]{1,90}", resource_group) or resource_group.endswith("."):
+                raise ValueError("Invalid resource group name.")
             filter_expr += f" and ResourceGroup eq '{resource_group}'"
 
         recs = self._list_recommendations(filter_expr)

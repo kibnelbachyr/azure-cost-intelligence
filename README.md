@@ -6,6 +6,8 @@
 
 With Python 3.11, run `python -m unittest discover -s tests -v` from the repository root. These tests exercise the deterministic recommendation engine using fictional inputs; no Azure credentials, dependency installation or cloud calls are required. The CI workflow runs these checks only, not deployments. Full SDK compatibility, live provider data and model output remain unverified.
 
+See [management SDK contract suite](docs/sdk-contracts.md) for synthetic provider responses and the tested compatibility boundary. The old Foundry runner needs a separate migration; do not attempt live operation based on the management SDK checks.
+
 See [financial evidence contract](docs/financial-evidence.md) for the offline ranking, currency, unknown-savings and scope rules. The current Advisor adapter retains generic provider savings with unknown period; it does not infer monthly savings. No aggregate potential savings is reported.
 
 An MVP AI agent built on **Azure AI Foundry** that analyses your Azure subscription
