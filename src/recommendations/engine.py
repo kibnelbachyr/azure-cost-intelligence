@@ -9,6 +9,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+from ..financial_evidence import amount_decimal, currency_code, monthly_evidence
+
 log = logging.getLogger(__name__)
 
 # Effort scoring heuristics based on Advisor recommendation type keywords
@@ -52,12 +54,14 @@ def _classify_risk(text: str) -> str:
     return "medium"
 
 
-def _priority_score(rec: "Recommendation") -> float:
-    """Higher is more urgent."""
+def _priority_score(rec: "Recommendation", reporting_currency: str | None) -> float | None:
+    """Comparable only with explicit monthly evidence in the reporting currency."""
+    if reporting_currency is None or rec.savings_currency != reporting_currency or rec.estimated_monthly_savings is None:
+        return None
     impact_weight = {"High": 3.0, "Medium": 2.0, "Low": 1.0}
     effort_weight = {"low": 1.5, "medium": 1.0, "high": 0.5}
 
-    savings = rec.estimated_monthly_savings or 0.0
+    savings = rec.estimated_monthly_savings
     impact = impact_weight.get(rec.impact or "Low", 1.0)
     effort = effort_weight.get(rec.effort, 1.0)
 
@@ -74,12 +78,13 @@ class Recommendation:
     effort: str          # low | medium | high
     risk: str            # low | medium | high
     estimated_monthly_savings: float | None
-    savings_currency: str
+    savings_currency: str | None
     recommended_actions: list[str] = field(default_factory=list)
     impacted_resource: str | None = None
     is_quick_win: bool = False
     trade_offs: list[str] = field(default_factory=list)
-    priority_score: float = 0.0
+    priority_score: float | None = None
+    savings_evidence: dict[str, Any] = field(default_factory=dict)
     source: str = "Azure Advisor"
 
     def to_dict(self) -> dict[str, Any]:
@@ -98,6 +103,9 @@ class Recommendation:
             "is_quick_win": self.is_quick_win,
             "trade_offs": self.trade_offs,
             "priority_score": self.priority_score,
+            "savings_evidence": self.savings_evidence,
+            "requires_human_review": True,
+            "advisory_only": True,
             "source": self.source,
         }
 
@@ -134,16 +142,18 @@ class RecommendationEngine:
         # Deduplicate by similar title + resource
         recs = self._deduplicate(recs)
 
-        # Score and sort
+        # Never compare currencies or unknown estimates by numeric magnitude.
+        reporting_currency = currency_code(cost_summary.get("currency"))
         for r in recs:
-            r.priority_score = _priority_score(r)
-        recs.sort(key=lambda r: r.priority_score, reverse=True)
+            r.priority_score = _priority_score(r, reporting_currency)
+        recs.sort(key=lambda r: (r.priority_score is None, -(r.priority_score or 0), r.id, r.impacted_resource or ""))
 
         # Mark quick wins: low effort + low/medium risk + meaningful savings
         for r in recs:
             r.is_quick_win = (
                 r.effort == "low"
                 and r.risk in ("low", "medium")
+                and r.priority_score is not None
                 and (r.estimated_monthly_savings or 0) > 0
             )
 
@@ -167,18 +177,24 @@ class RecommendationEngine:
             if "delete" in combined_text.lower() or "remove" in combined_text.lower():
                 trade_offs.append("Ensure resource is not needed before deletion.")
 
+            amount, code = monthly_evidence(raw.get("estimated_monthly_savings"), raw.get("savings_currency"))
+            evidence = raw.get("provider_savings") or {
+                "source": "Explicit monthly input" if amount is not None else "No verified monthly estimate",
+                "period": "monthly" if amount is not None else "unknown",
+            }
             rec = Recommendation(
-                id=raw.get("name", ""),
+                id=raw.get("id") or raw.get("name") or "",
                 title=problem or "Cost Optimization Opportunity",
                 description=solution or "",
                 category=raw.get("category", "Cost"),
                 impact=raw.get("impact", "Low"),
                 effort=effort,
                 risk=risk,
-                estimated_monthly_savings=raw.get("estimated_monthly_savings"),
-                savings_currency=raw.get("savings_currency", "USD"),
+                estimated_monthly_savings=amount,
+                savings_currency=code,
+                savings_evidence=evidence,
                 recommended_actions=[solution] if solution else [],
-                impacted_resource=raw.get("impacted_value"),
+                impacted_resource=(raw.get("resource_metadata") or {}).get("resource_id") or raw.get("impacted_value"),
                 trade_offs=trade_offs,
             )
             result.append(rec)
@@ -200,7 +216,8 @@ class RecommendationEngine:
                 effort="low",
                 risk="high",
                 estimated_monthly_savings=None,
-                savings_currency="USD",
+                savings_currency=None,
+                savings_evidence={"source": "Resource Graph observation; no verified price", "period": "unknown"},
                 recommended_actions=[
                     f"Delete or deallocate VM '{vm.get('name')}' if no longer needed.",
                     "Consider auto-shutdown schedule for dev/test VMs.",
@@ -212,8 +229,6 @@ class RecommendationEngine:
 
         for disk in idle_data.get("unused_disks", {}).get("unused_disks", []):
             size_gb = disk.get("sizeGb", 0)
-            # Rough estimate: P10 managed disk ≈ $0.04/GB/month
-            estimated = round(size_gb * 0.04, 2)
             rec = Recommendation(
                 id=f"unused-disk-{disk.get('name', '')}",
                 title=f"Unattached Managed Disk: {disk.get('name', 'Unknown')}",
@@ -225,8 +240,9 @@ class RecommendationEngine:
                 impact="Low",
                 effort="low",
                 risk="high",
-                estimated_monthly_savings=estimated,
-                savings_currency="USD",
+                estimated_monthly_savings=None,
+                savings_currency=None,
+                savings_evidence={"source": "Resource Graph observation; no verified price", "period": "unknown"},
                 recommended_actions=[
                     f"Snapshot and delete disk '{disk.get('name')}' if data is no longer needed.",
                 ],
@@ -236,8 +252,6 @@ class RecommendationEngine:
             result.append(rec)
 
         for pip in idle_data.get("unused_pips", {}).get("unattached_public_ips", []):
-            # Standard PIP ≈ $0.005/hour = ~$3.60/month
-            estimated = 3.60
             rec = Recommendation(
                 id=f"unused-pip-{pip.get('name', '')}",
                 title=f"Unattached Public IP: {pip.get('name', 'Unknown')}",
@@ -249,8 +263,9 @@ class RecommendationEngine:
                 impact="Low",
                 effort="low",
                 risk="high",
-                estimated_monthly_savings=estimated,
-                savings_currency="USD",
+                estimated_monthly_savings=None,
+                savings_currency=None,
+                savings_evidence={"source": "Resource Graph observation; no verified price", "period": "unknown"},
                 recommended_actions=[
                     f"Delete public IP '{pip.get('name')}' only after reviewing ownership and dependencies.",
                 ],
@@ -272,11 +287,21 @@ class RecommendationEngine:
         *where* money is going so it can give better narrative advice.
         """
         result = []
-        total = cost_summary.get("total_cost", 1) or 1
-        currency = cost_summary.get("currency", "USD")
+        total = amount_decimal(cost_summary.get("total_cost"))
+        currency = currency_code(cost_summary.get("currency"))
+        driver_currency = currency_code(top_drivers.get("currency"))
+        if total is None or total <= 0 or currency is None or driver_currency != currency:
+            return result
+        # Never correlate independent query windows or scopes by assumption.
+        for field in ("scope", "from_date", "to_date"):
+            if not cost_summary.get(field) or cost_summary[field] != top_drivers.get(field):
+                return result
 
         for driver in top_drivers.get("top_drivers", [])[:3]:
-            pct = driver.get("percentage", 0)
+            cost = amount_decimal(driver.get("cost"))
+            if cost is None or cost < 0 or not isinstance(driver.get("name"), str):
+                continue
+            pct = round(float(cost / total * 100), 1)
             if pct < 5:
                 continue  # not significant enough to call out separately
 
@@ -284,7 +309,7 @@ class RecommendationEngine:
                 id=f"top-spend-{driver['name'].replace(' ', '-').lower()}",
                 title=f"High Spend: {driver['name']} ({pct}% of total)",
                 description=(
-                    f"{driver['name']} accounts for {driver['cost']} {currency} "
+                    f"{driver['name']} accounts for {cost} {currency} "
                     f"({pct}% of total spend of {total} {currency} in the period). "
                     "Review whether consumption is expected or can be optimised."
                 ),
@@ -293,7 +318,8 @@ class RecommendationEngine:
                 effort="medium",
                 risk="low",
                 estimated_monthly_savings=None,
-                savings_currency=currency,
+                savings_currency=None,
+                savings_evidence={"source": "Actual spend is not a savings estimate", "period": "unknown"},
                 recommended_actions=[
                     f"Review {driver['name']} usage in Azure Portal Cost Analysis.",
                     "Compare actual vs. budgeted spend.",
@@ -307,12 +333,14 @@ class RecommendationEngine:
         return result
 
     def _deduplicate(self, recs: list[Recommendation]) -> list[Recommendation]:
-        """Remove duplicate recommendations based on impacted resource."""
-        seen: set[str] = set()
+        """Only coalesce identical identified recommendations; never merge distinct opportunities."""
+        seen: set[tuple[str, str]] = set()
         unique = []
-        for r in recs:
-            key = f"{r.impacted_resource or r.id}"
-            if key not in seen:
-                seen.add(key)
+        # If duplicate evidence conflicts, preserve the higher-risk observation.
+        for r in sorted(recs, key=lambda row: {"high": 0, "medium": 1, "low": 2}.get(row.risk, 0)):
+            key = (r.id.casefold(), (r.impacted_resource or "").casefold())
+            if not r.id or key not in seen:
+                if r.id:
+                    seen.add(key)
                 unique.append(r)
         return unique

@@ -18,6 +18,7 @@ from azure.mgmt.advisor import AdvisorManagementClient
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..config import get_settings
+from ..financial_evidence import provider_savings, savings_evidence_summary
 
 log = logging.getLogger(__name__)
 
@@ -42,19 +43,10 @@ def _build_credential():
 
 def _normalise(rec: Any) -> dict[str, Any]:
     """Convert an SDK ResourceRecommendationBase object to a plain dict."""
-    props = rec.properties if hasattr(rec, "properties") else {}
-    savings_amount = None
-    savings_currency = None
-
-    # Extended properties may carry savings estimates
+    props = getattr(rec, "properties", None) or rec
+    # The generic savingsAmount property does not attest to a monthly period.
     ext = getattr(props, "extended_properties", {}) or {}
-    if "savingsAmount" in ext:
-        try:
-            savings_amount = float(ext["savingsAmount"])
-        except (ValueError, TypeError):
-            pass
-    if "savingsCurrency" in ext:
-        savings_currency = ext["savingsCurrency"]
+    evidence = provider_savings(ext.get("savingsAmount"), ext.get("savingsCurrency"))
 
     short_desc = getattr(props, "short_description", None)
     problem = getattr(short_desc, "problem", None) if short_desc else None
@@ -69,8 +61,9 @@ def _normalise(rec: Any) -> dict[str, Any]:
         "impacted_value": getattr(props, "impacted_value", None),
         "problem": problem,
         "solution": solution,
-        "estimated_monthly_savings": savings_amount,
-        "savings_currency": savings_currency or "USD",
+        "estimated_monthly_savings": None,
+        "savings_currency": None,
+        "provider_savings": evidence,
         "recommendation_type_id": getattr(props, "recommendation_type_id", None),
         "last_updated": str(getattr(props, "last_updated", "")),
         "resource_metadata": {
@@ -108,8 +101,7 @@ class AdvisorService:
         Return all Advisor recommendations in the Cost category,
         optionally scoped to a resource group.
 
-        Returns a dict with 'recommendations' list sorted by estimated
-        savings descending.
+        Returns recommendations ordered by impact, not incomparable monetary estimates.
         """
         filter_expr = f"Category eq '{COST_CATEGORY}'"
         if resource_group:
@@ -117,24 +109,13 @@ class AdvisorService:
 
         recs = self._list_recommendations(filter_expr)
 
-        # Sort: highest savings first, then by impact level
-        recs.sort(
-            key=lambda r: (
-                r.get("estimated_monthly_savings") or 0,
-                IMPACT_SCORE.get(r.get("impact", "Low"), 0),
-            ),
-            reverse=True,
-        )
-
-        total_potential_savings = sum(
-            r["estimated_monthly_savings"] for r in recs if r.get("estimated_monthly_savings")
-        )
+        recs.sort(key=lambda r: (-IMPACT_SCORE.get(r.get("impact"), 0), r.get("id") or ""))
 
         return {
             "scope": f"resourceGroup={resource_group}" if resource_group else "subscription",
             "category": COST_CATEGORY,
             "total_recommendations": len(recs),
-            "total_potential_monthly_savings": round(total_potential_savings, 2),
+            "savings_evidence_summary": savings_evidence_summary(recs),
             "recommendations": recs,
         }
 

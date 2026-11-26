@@ -36,9 +36,9 @@ class RecommendationRiskTests(unittest.TestCase):
             self.assertTrue(rec["trade_offs"])
 
     def test_low_risk_positive_savings_remain_eligible(self):
-        recs = RecommendationEngine().correlate({}, {}, {"recommendations": [{
+        recs = RecommendationEngine().correlate({"currency": "EUR"}, {}, {"recommendations": [{
             "name": "example", "problem": "Reserved instance",
-            "solution": "Review reserved instance", "estimated_monthly_savings": 25,
+            "solution": "Review reserved instance", "estimated_monthly_savings": 25, "savings_currency": "EUR",
         }]})
         self.assertTrue(recs[0]["is_quick_win"])
 
