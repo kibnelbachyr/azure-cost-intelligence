@@ -133,23 +133,43 @@
       ],
       "checks": [
         {
-          "path": "outputs.0.total_cost",
+          "path": [
+            "outputs",
+            "0",
+            "total_cost"
+          ],
           "equals": 100
         },
         {
-          "path": "outputs.0.currency",
+          "path": [
+            "outputs",
+            "0",
+            "currency"
+          ],
           "equals": "EUR"
         },
         {
-          "path": "outputs.0.from_date",
+          "path": [
+            "outputs",
+            "0",
+            "from_date"
+          ],
           "equals": "2026-01-01"
         },
         {
-          "path": "outputs.0.to_date",
+          "path": [
+            "outputs",
+            "0",
+            "to_date"
+          ],
           "equals": "2026-01-31"
         },
         {
-          "path": "outputs.0.scope",
+          "path": [
+            "outputs",
+            "0",
+            "scope"
+          ],
           "equals": "/subscriptions/00000000-0000-4000-8000-000000000001"
         }
       ],
@@ -183,15 +203,28 @@
       ],
       "checks": [
         {
-          "path": "outputs.0.total_cost",
+          "path": [
+            "outputs",
+            "0",
+            "total_cost"
+          ],
           "equals": 100
         },
         {
-          "path": "outputs.0.currency",
+          "path": [
+            "outputs",
+            "0",
+            "currency"
+          ],
           "equals": "EUR"
         },
         {
-          "path": "outputs.0.top_drivers.0",
+          "path": [
+            "outputs",
+            "0",
+            "top_drivers",
+            "0"
+          ],
           "equals": {
             "name": "Compute",
             "cost": 60,
@@ -199,7 +232,12 @@
           }
         },
         {
-          "path": "outputs.0.top_drivers.1",
+          "path": [
+            "outputs",
+            "0",
+            "top_drivers",
+            "1"
+          ],
           "equals": {
             "name": "Storage",
             "cost": 40,
@@ -237,15 +275,31 @@
       ],
       "checks": [
         {
-          "path": "outputs.0.tag",
+          "path": [
+            "outputs",
+            "0",
+            "tag"
+          ],
           "equals": "Environment=Demo"
         },
         {
-          "path": "outputs.0.total_cost",
+          "path": [
+            "outputs",
+            "0",
+            "total_cost"
+          ],
           "equals": 100
         },
         {
-          "path": "requests.0.body.dataset.filter.tags.values",
+          "path": [
+            "requests",
+            "0",
+            "body",
+            "dataset",
+            "filter",
+            "tags",
+            "values"
+          ],
           "equals": [
             "Demo"
           ]
@@ -301,51 +355,121 @@
       ],
       "checks": [
         {
-          "path": "outputs.0.cost_summary.total_cost",
+          "path": [
+            "outputs",
+            "0",
+            "cost_summary",
+            "total_cost"
+          ],
           "equals": 100
         },
         {
-          "path": "outputs.0.idle_scan_included",
+          "path": [
+            "outputs",
+            "0",
+            "idle_scan_included"
+          ],
           "equals": true
         },
         {
-          "path": "outputs.0.recommendations.length",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "length"
+          ],
           "equals": 4
         },
         {
-          "path": "outputs.0.recommendations.by_id./subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec.savings_evidence.period",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "by_id",
+            "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec",
+            "savings_evidence",
+            "period"
+          ],
           "equals": "unknown"
         },
         {
-          "path": "outputs.0.recommendations.by_id./subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec.savings_evidence.amount",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "by_id",
+            "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec",
+            "savings_evidence",
+            "amount"
+          ],
           "equals": 120
         },
         {
-          "path": "outputs.0.recommendations.by_id.unused-disk-demo-disk.risk",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "by_id",
+            "unused-disk-demo-disk",
+            "risk"
+          ],
           "equals": "high"
         },
         {
-          "path": "outputs.0.recommendations.by_id.unused-disk-demo-disk.estimated_monthly_savings",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "by_id",
+            "unused-disk-demo-disk",
+            "estimated_monthly_savings"
+          ],
           "equals": null
         },
         {
-          "path": "outputs.0.recommendations.by_id.top-spend-compute.title",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "by_id",
+            "top-spend-compute",
+            "title"
+          ],
           "equals": "High Spend: Compute (60.0% of total)"
         },
         {
-          "path": "outputs.0.savings_evidence_summary.aggregate_monthly_savings",
+          "path": [
+            "outputs",
+            "0",
+            "savings_evidence_summary",
+            "aggregate_monthly_savings"
+          ],
           "equals": null
         },
         {
-          "path": "outputs.0.savings_evidence_summary.unknown_monthly_estimate_count",
+          "path": [
+            "outputs",
+            "0",
+            "savings_evidence_summary",
+            "unknown_monthly_estimate_count"
+          ],
           "equals": 4
         },
         {
-          "path": "outputs.0.quick_wins",
+          "path": [
+            "outputs",
+            "0",
+            "quick_wins"
+          ],
           "equals": []
         },
         {
-          "path": "outputs.0.recommendations.all_advisory_review",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "all_advisory_review"
+          ],
           "equals": true
         }
       ],
@@ -387,31 +511,75 @@
       ],
       "checks": [
         {
-          "path": "outputs.0.recommendations.length",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "length"
+          ],
           "equals": 4
         },
         {
-          "path": "outputs.0.recommendations.by_id./subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec.estimated_monthly_savings",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "by_id",
+            "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec",
+            "estimated_monthly_savings"
+          ],
           "equals": null
         },
         {
-          "path": "outputs.0.recommendations.by_id./subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec-second.risk",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "by_id",
+            "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec-second",
+            "risk"
+          ],
           "equals": "high"
         },
         {
-          "path": "outputs.0.recommendations.by_id./subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec-second.savings_evidence.currency",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "by_id",
+            "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec-second",
+            "savings_evidence",
+            "currency"
+          ],
           "equals": "USD"
         },
         {
-          "path": "outputs.0.recommendations.by_id./subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec-second.savings_evidence.period",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "by_id",
+            "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec-second",
+            "savings_evidence",
+            "period"
+          ],
           "equals": "unknown"
         },
         {
-          "path": "outputs.0.savings_evidence_summary.aggregate_monthly_savings",
+          "path": [
+            "outputs",
+            "0",
+            "savings_evidence_summary",
+            "aggregate_monthly_savings"
+          ],
           "equals": null
         },
         {
-          "path": "outputs.0.quick_wins",
+          "path": [
+            "outputs",
+            "0",
+            "quick_wins"
+          ],
           "equals": []
         }
       ],
@@ -445,15 +613,27 @@
       ],
       "checks": [
         {
-          "path": "outputs.0.total_cost",
+          "path": [
+            "outputs",
+            "0",
+            "total_cost"
+          ],
           "equals": null
         },
         {
-          "path": "outputs.0.currency",
+          "path": [
+            "outputs",
+            "0",
+            "currency"
+          ],
           "equals": null
         },
         {
-          "path": "outputs.0.time_series",
+          "path": [
+            "outputs",
+            "0",
+            "time_series"
+          ],
           "equals": []
         }
       ],
@@ -497,15 +677,29 @@
       ],
       "checks": [
         {
-          "path": "outputs.0.cost_summary.scope",
+          "path": [
+            "outputs",
+            "0",
+            "cost_summary",
+            "scope"
+          ],
           "equals": "/subscriptions/00000000-0000-4000-8000-000000000001/resourceGroups/demo-rg"
         },
         {
-          "path": "outputs.0.idle_scan_included",
+          "path": [
+            "outputs",
+            "0",
+            "idle_scan_included"
+          ],
           "equals": false
         },
         {
-          "path": "outputs.0.recommendations.length",
+          "path": [
+            "outputs",
+            "0",
+            "recommendations",
+            "length"
+          ],
           "equals": 3
         }
       ],

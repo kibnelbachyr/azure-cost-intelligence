@@ -49,9 +49,23 @@ def read_json(path):
     return json.loads(path.read_text())
 
 
+def equal(actual, expected):
+    # Financial JSON numbers compare by numeric value, not their textual encoding.
+    # Booleans remain distinct from numbers.
+    if type(actual) in (int,float) and type(expected) in (int,float):
+        return actual == expected
+    if type(actual) is not type(expected):
+        return False
+    if isinstance(actual, dict):
+        return actual.keys() == expected.keys() and all(equal(actual[k],expected[k]) for k in actual)
+    if isinstance(actual, list):
+        return len(actual) == len(expected) and all(equal(a,b) for a,b in zip(actual,expected))
+    return actual == expected
+
+
 def lookup(root, path):
     """Simple path grammar: keys, list indexes, length, by_id.<id>, all_advisory_review."""
-    parts = path.split(".")
+    parts = path if isinstance(path, list) else path.split(".")
     value = root
     for i, part in enumerate(parts):
         if isinstance(value, list):
@@ -182,7 +196,7 @@ def run_case(case, fixtures):
     for path, target in rules:
         try:
             actual = lookup(observed,path)
-            passed = canonical(actual) == canonical(target)
+            passed = equal(actual, target)
         except (KeyError,IndexError,ValueError,TypeError):
             actual,passed = {"missing_path":True},False
         results.append({"check":path,"passed":passed,**({} if passed else {"expected":target,"actual":actual})})
@@ -198,8 +212,8 @@ def normalized_case():
     observed = {"order":[r["id"] for r in rows],"eur_score":by_id["eur"]["priority_score"],
         "usd_score":by_id["usd"]["priority_score"],"unknown_risk":by_id["unknown"]["risk"],
         "aggregate":savings_evidence_summary(rows)["aggregate_monthly_savings"]}
-    checks = [{"check":key,"passed":canonical(observed[key])==canonical(target),
-               **({} if canonical(observed[key])==canonical(target) else {"expected":target,"actual":observed[key]})}
+    checks = [{"check":key,"passed":equal(observed[key],target),
+               **({} if equal(observed[key],target) else {"expected":target,"actual":observed[key]})}
               for key,target in data["expected"].items()]
     return {"id":"N01","category":"normalized_engine_only","outcome":"completed",
             "passed":all(c["passed"] for c in checks),"checks":checks,"observation_sha256":digest(observed)}
