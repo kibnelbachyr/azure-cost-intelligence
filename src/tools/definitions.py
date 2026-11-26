@@ -91,7 +91,7 @@ TOOL_DEFINITIONS: list[dict] = [
         "name": "get_advisor_cost_recommendations",
         "description": (
             "Fetches Azure Advisor Cost recommendations for the subscription (or a resource group). "
-            "Returns a prioritised list of optimisation opportunities with estimated monthly savings."
+            "Returns opportunities and provider savings evidence; monthly savings may be unknown."
         ),
         "parameters": {
             "type": "object",
@@ -108,7 +108,7 @@ TOOL_DEFINITIONS: list[dict] = [
         "name": "correlate_cost_and_advisor",
         "description": (
             "Runs a full cost analysis + Advisor query and correlates the results into a ranked list "
-            "of actionable optimisation recommendations with estimated savings, effort, and risk. "
+            "of advisory optimisation recommendations with evidence, effort, and risk. "
             "This is the most comprehensive tool — call it when the user asks for a broad overview "
             "or 'top opportunities'."
         ),

@@ -24,6 +24,7 @@ from azure.mgmt.costmanagement.models import (
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..config import get_settings
+from ..financial_evidence import validated_cost_rows
 
 log = logging.getLogger(__name__)
 
@@ -51,8 +52,7 @@ class CostManagementService:
     """
     Queries Azure Cost Management for actual-spend data.
 
-    All monetary values are returned in USD unless the subscription
-    billing currency differs, in which case the raw currency is preserved.
+    Preserve a single explicit provider currency; reject missing/mixed currency.
     """
 
     def __init__(self) -> None:
@@ -75,6 +75,9 @@ class CostManagementService:
             log.error("Cost Management query failed for scope %s: %s", scope, exc.message)
             raise
 
+        # Do not silently report a partial page as total actual spend.
+        if getattr(result, "next_link", None):
+            raise ValueError("Paginated cost result requires explicit pagination support.")
         if not result.rows:
             return []
 
@@ -119,14 +122,13 @@ class CostManagementService:
         )
 
         rows = self._query(scope, definition)
-        total = sum(r.get("Cost", 0) for r in rows)
-        currency = rows[0].get("Currency", "USD") if rows else "USD"
+        total, currency, amounts = validated_cost_rows(rows)
 
         return {
             "scope": scope,
             "from_date": from_date,
             "to_date": to_date,
-            "total_cost": round(total, 2),
+            "total_cost": float(total) if total is not None else None,
             "currency": currency,
             "granularity": granularity,
             "time_series": rows,
@@ -166,17 +168,16 @@ class CostManagementService:
         )
 
         rows = self._query(scope, definition)
-        rows_sorted = sorted(rows, key=lambda r: r.get("Cost", 0), reverse=True)[:top_n]
-        total = sum(r.get("Cost", 0) for r in rows)
-        currency = rows[0].get("Currency", "USD") if rows else "USD"
+        total, currency, amounts = validated_cost_rows(rows)
+        rows_sorted = sorted(zip(rows, amounts), key=lambda item: item[1], reverse=True)[:top_n]
 
         drivers = [
             {
                 "name": r.get(group_by, "Unknown"),
-                "cost": round(r.get("Cost", 0), 2),
-                "percentage": round(r.get("Cost", 0) / total * 100, 1) if total > 0 else 0,
+                "cost": float(amount),
+                "percentage": round(float(amount / total * 100), 1) if total is not None and total > 0 else None,
             }
-            for r in rows_sorted
+            for r, amount in rows_sorted
         ]
 
         return {
@@ -184,7 +185,7 @@ class CostManagementService:
             "from_date": from_date,
             "to_date": to_date,
             "group_by": group_by,
-            "total_cost": round(total, 2),
+            "total_cost": float(total) if total is not None else None,
             "currency": currency,
             "top_drivers": drivers,
         }
@@ -223,15 +224,14 @@ class CostManagementService:
         )
 
         rows = self._query(scope, definition)
-        total = sum(r.get("Cost", 0) for r in rows)
-        currency = rows[0].get("Currency", "USD") if rows else "USD"
+        total, currency, amounts = validated_cost_rows(rows)
 
         return {
             "scope": scope,
             "tag": f"{tag_name}={tag_value}",
             "from_date": from_date,
             "to_date": to_date,
-            "total_cost": round(total, 2),
+            "total_cost": float(total) if total is not None else None,
             "currency": currency,
         }
 

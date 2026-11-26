@@ -11,9 +11,7 @@ import json
 import logging
 from typing import Any
 
-from ..services.cost_management import CostManagementService
-from ..services.advisor import AdvisorService
-from ..services.resource_graph import ResourceGraphService
+from ..financial_evidence import savings_evidence_summary
 from ..recommendations.engine import RecommendationEngine
 
 log = logging.getLogger(__name__)
@@ -25,10 +23,19 @@ class ToolHandlers:
     dispatch() entry point that the agent runner calls during tool execution.
     """
 
-    def __init__(self) -> None:
-        self._cost = CostManagementService()
-        self._advisor = AdvisorService()
-        self._graph = ResourceGraphService()
+    def __init__(self, *, cost=None, advisor=None, graph=None, subscription_id: str | None = None) -> None:
+        # All dependencies must be injected together in offline mode.
+        if cost is None and advisor is None and graph is None and subscription_id is None:
+            from ..config import get_settings
+            from ..services.cost_management import CostManagementService
+            from ..services.advisor import AdvisorService
+            from ..services.resource_graph import ResourceGraphService
+            subscription_id = get_settings().azure_subscription_id
+            cost, advisor, graph = CostManagementService(), AdvisorService(), ResourceGraphService()
+        if any(service is None for service in (cost, advisor, graph)) or not subscription_id:
+            raise ValueError("Provide all three services and the configured subscription together.")
+        self._cost, self._advisor, self._graph = cost, advisor, graph
+        self._subscription_id = subscription_id
         self._engine = RecommendationEngine()
 
     # ── dispatcher ────────────────────────────────────────────────────────────
@@ -54,11 +61,14 @@ class ToolHandlers:
             return json.dumps({"error": f"Unknown tool: {function_name}"})
 
         try:
+            requested = arguments.get("subscription_id")
+            if requested is not None and (not isinstance(requested, str) or requested.casefold() != self._subscription_id.casefold()):
+                return json.dumps({"error": "Requested subscription is outside the configured single-subscription scope.", "tool": function_name})
             result = handler(**arguments)
-            return json.dumps(result, default=str)
+            return json.dumps(result, default=str, allow_nan=False)
         except Exception as exc:
-            log.exception("Tool '%s' raised an error", function_name)
-            return json.dumps({"error": str(exc), "tool": function_name})
+            log.warning("Tool %s failed (%s)", function_name, type(exc).__name__)
+            return json.dumps({"error": "Tool failed; verify scope and source data.", "tool": function_name})
 
     # ── individual handlers ───────────────────────────────────────────────────
 
@@ -165,7 +175,7 @@ class ToolHandlers:
         advisor_data = self._advisor.get_cost_recommendations(resource_group=resource_group)
 
         idle_data: dict[str, Any] = {}
-        if include_idle_resources:
+        if include_idle_resources and not resource_group:
             idle_vms = self._graph.get_idle_vms()
             unused_disks = self._graph.get_unused_disks()
             unused_pips = self._graph.get_unattached_public_ips()
@@ -182,16 +192,12 @@ class ToolHandlers:
             idle_resources=idle_data,
         )
 
-        total_potential_savings = sum(
-            r["estimated_monthly_savings"] or 0
-            for r in recommendations
-            if r.get("estimated_monthly_savings")
-        )
-
         return {
             "cost_summary": cost_summary,
             "top_drivers": top_drivers,
             "recommendations": recommendations,
-            "total_potential_monthly_savings": round(total_potential_savings, 2),
+            "savings_evidence_summary": savings_evidence_summary(recommendations),
+            "idle_scan_included": bool(include_idle_resources and not resource_group),
+            "idle_scan_note": "Subscription-wide idle scan omitted for resource-group scope." if include_idle_resources and resource_group else None,
             "quick_wins": [r for r in recommendations if r.get("is_quick_win")],
         }
