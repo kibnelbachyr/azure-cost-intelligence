@@ -1,16 +1,9 @@
-# Azure SDK core
-azure-identity>=1.17.0
-azure-mgmt-costmanagement>=4.0.0
-azure-mgmt-advisor>=9.0.0
-azure-mgmt-resourcegraph>=8.0.0
-azure-mgmt-resource>=23.0.0
+# Data-plane management adapters: tested direct-version compatibility baseline.
+-r requirements-management.txt
 
-# Azure AI Foundry (Agents)
+# Legacy Foundry runner: migration to endpoint/modern agent APIs remains open.
+# Do not interpret management contract tests as validation of this dependency.
 azure-ai-projects>=1.0.0b11
 
-# Utilities
-python-dotenv>=1.0.0
-pydantic>=2.7.0
-pydantic-settings>=2.3.0
-rich>=13.7.0          # pretty console output
-tenacity>=8.3.0       # retry logic
+# CLI
+rich>=13.7.0

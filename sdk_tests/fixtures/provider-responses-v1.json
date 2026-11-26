@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "note": "Fictional provider-shaped JSON; not recorded production responses.",
+  "subscription_id": "00000000-0000-4000-8000-000000000001",
+  "cost_summary": {
+    "id": "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.CostManagement/query/demo",
+    "name": "demo",
+    "type": "Microsoft.CostManagement/query",
+    "properties": {
+      "columns": [
+        {
+          "name": "Cost",
+          "type": "Number"
+        },
+        {
+          "name": "Currency",
+          "type": "String"
+        }
+      ],
+      "rows": [
+        [
+          100.25,
+          "EUR"
+        ],
+        [
+          -0.25,
+          "EUR"
+        ]
+      ],
+      "nextLink": null
+    }
+  },
+  "cost_grouped": {
+    "id": "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.CostManagement/query/demo",
+    "name": "demo",
+    "type": "Microsoft.CostManagement/query",
+    "properties": {
+      "columns": [
+        {
+          "name": "ServiceName",
+          "type": "String"
+        },
+        {
+          "name": "Cost",
+          "type": "Number"
+        },
+        {
+          "name": "Currency",
+          "type": "String"
+        }
+      ],
+      "rows": [
+        [
+          "Compute",
+          60,
+          "EUR"
+        ],
+        [
+          "Storage",
+          40,
+          "EUR"
+        ]
+      ],
+      "nextLink": null
+    }
+  },
+  "cost_mixed": {
+    "id": "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.CostManagement/query/demo",
+    "name": "demo",
+    "type": "Microsoft.CostManagement/query",
+    "properties": {
+      "columns": [
+        {
+          "name": "Cost",
+          "type": "Number"
+        },
+        {
+          "name": "Currency",
+          "type": "String"
+        }
+      ],
+      "rows": [
+        [
+          100,
+          "EUR"
+        ],
+        [
+          10,
+          "USD"
+        ]
+      ],
+      "nextLink": null
+    }
+  },
+  "cost_malformed": {
+    "id": "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.CostManagement/query/demo",
+    "name": "demo",
+    "type": "Microsoft.CostManagement/query",
+    "properties": {
+      "columns": [
+        {
+          "name": "Cost",
+          "type": "Number"
+        },
+        {
+          "name": "Currency",
+          "type": "String"
+        }
+      ],
+      "rows": [
+        [
+          100
+        ]
+      ],
+      "nextLink": null
+    }
+  },
+  "cost_paged": {
+    "id": "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.CostManagement/query/demo",
+    "name": "demo",
+    "type": "Microsoft.CostManagement/query",
+    "properties": {
+      "columns": [
+        {
+          "name": "Cost",
+          "type": "Number"
+        },
+        {
+          "name": "Currency",
+          "type": "String"
+        }
+      ],
+      "rows": [
+        [
+          100,
+          "EUR"
+        ]
+      ],
+      "nextLink": "https://management.azure.com/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.CostManagement/query?skiptoken=synthetic"
+    }
+  },
+  "advisor": {
+    "value": [
+      {
+        "id": "/subscriptions/00000000-0000-4000-8000-000000000001/providers/Microsoft.Advisor/recommendations/demo-rec",
+        "name": "demo-rec",
+        "type": "Microsoft.Advisor/recommendations",
+        "properties": {
+          "category": "Cost",
+          "impact": "High",
+          "impactedField": "Microsoft.Compute/disks",
+          "impactedValue": "demo-disk",
+          "shortDescription": {
+            "problem": "Review disk",
+            "solution": "Review ownership"
+          },
+          "extendedProperties": {
+            "savingsAmount": "120",
+            "savingsCurrency": "EUR"
+          },
+          "resourceMetadata": {
+            "resourceId": "/subscriptions/00000000-0000-4000-8000-000000000001/resourceGroups/demo-rg/providers/Microsoft.Compute/disks/demo-disk"
+          },
+          "lastUpdated": "2026-01-31T00:00:00Z"
+        }
+      }
+    ]
+  },
+  "graph": {
+    "totalRecords": 1,
+    "count": 1,
+    "resultTruncated": "false",
+    "data": [
+      {
+        "id": "/subscriptions/00000000-0000-4000-8000-000000000001/resourceGroups/demo-rg/providers/Microsoft.Compute/disks/demo-disk",
+        "name": "demo-disk",
+        "resourceGroup": "demo-rg",
+        "location": "westeurope",
+        "sizeGb": 100,
+        "sku": "StandardSSD_LRS"
+      }
+    ]
+  },
+  "graph_partial": {
+    "totalRecords": 2,
+    "count": 1,
+    "resultTruncated": "true",
+    "data": [
+      {
+        "id": "/subscriptions/00000000-0000-4000-8000-000000000001/resourceGroups/demo-rg/providers/Microsoft.Compute/disks/demo-disk",
+        "name": "demo-disk",
+        "resourceGroup": "demo-rg",
+        "location": "westeurope",
+        "sizeGb": 100,
+        "sku": "StandardSSD_LRS"
+      }
+    ],
+    "$skipToken": "synthetic"
+  },
+  "graph_bad_count": {
+    "totalRecords": 2,
+    "count": 2,
+    "resultTruncated": "false",
+    "data": [
+      {
+        "id": "/subscriptions/00000000-0000-4000-8000-000000000001/resourceGroups/demo-rg/providers/Microsoft.Compute/disks/demo-disk",
+        "name": "demo-disk",
+        "resourceGroup": "demo-rg",
+        "location": "westeurope",
+        "sizeGb": 100,
+        "sku": "StandardSSD_LRS"
+      }
+    ]
+  },
+  "graph_empty": {
+    "totalRecords": 0,
+    "count": 0,
+    "resultTruncated": "false",
+    "data": []
+  }
+}
