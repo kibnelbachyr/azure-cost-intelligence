@@ -1,6 +1,6 @@
 """
 JSON schema definitions for every tool the agent can call.
-These are fed directly to the Azure AI Foundry agent as FunctionTool objects.
+The Responses provider and local argument validator share these definitions.
 """
 from __future__ import annotations
 
@@ -162,3 +162,13 @@ TOOL_DEFINITIONS: list[dict] = [
         },
     },
 ]
+
+# Explicit local limits are also advertised to the model.
+for tool in TOOL_DEFINITIONS:
+    parameters = tool["parameters"]
+    parameters["additionalProperties"] = False
+    for name, spec in parameters["properties"].items():
+        if spec["type"] == "integer":
+            spec.update(minimum=1, maximum=50 if name == "limit" else 365)
+        elif spec["type"] == "string":
+            spec.update(minLength=1, maxLength=256)

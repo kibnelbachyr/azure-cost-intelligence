@@ -1,9 +1,5 @@
-# Data-plane management adapters: tested direct-version compatibility baseline.
+# Management adapters and modern Foundry Responses client: direct version pins.
 -r requirements-management.txt
-
-# Legacy Foundry runner: migration to endpoint/modern agent APIs remains open.
-# Do not interpret management contract tests as validation of this dependency.
-azure-ai-projects>=1.0.0b11
-
-# CLI
+azure-ai-projects==2.11.0
+openai==3.59.0
 rich>=13.7.0

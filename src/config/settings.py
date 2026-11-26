@@ -7,7 +7,8 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Optional
 
-from pydantic import Field, model_validator
+from pydantic import Field, model_validator, field_validator
+import re
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,13 +28,19 @@ class Settings(BaseSettings):
     use_managed_identity: bool = Field(False, description="Use Managed Identity instead of SP")
 
     # ── Azure AI Foundry ──────────────────────────────────────────────────────
-    azure_ai_project_connection_string: str = Field(
-        ...,
-        description=(
-            "Foundry project connection string: "
-            "<region>.api.azureml.ms;<sub-id>;<rg>;<project>"
-        ),
+    azure_ai_project_endpoint: Optional[str] = Field(
+        None, description="HTTPS Microsoft Foundry project endpoint (public Azure cloud)"
     )
+
+    @field_validator("azure_ai_project_endpoint")
+    @classmethod
+    def _validate_endpoint(cls, value):
+        if value is not None and not re.fullmatch(
+            r"https://[a-zA-Z0-9-]+\.services\.ai\.azure\.com/api/projects/[a-zA-Z0-9_-]+/?",
+            value,
+        ):
+            raise ValueError("Use a public Azure Foundry project HTTPS endpoint.")
+        return value.rstrip("/") if value else value
     azure_openai_deployment_name: str = Field(
         "gpt-4o",
         description="Model deployment name in your AI Foundry project",

@@ -19,7 +19,7 @@ The versioned JSON in sdk_tests/fixtures/provider-responses-v1.json is fabricate
 - Advisor normalizes returned model properties and preserves unknown-period savings. Resource-group filter rejects malformed input.
 - Resource Graph explicitly requests object arrays, rejects partial/inconsistent results, and requires a disk to report Unattached and no managedBy before it becomes a candidate. This is a query contract, not verification of real KQL behavior or safety of deletion. No paging is implemented; large results may fail.
 - No live credentials, actual billing records, regional prices, provider accuracy, throttling, real authorization, or LLM quality are validated.
-- The legacy Foundry runner relies on from_connection_string and older thread/run surfaces. The current endpoint-based SDK requires a separate migration and independent orchestration fixtures. Do not infer compatibility of requirements.txt or live Foundry execution from these management-only checks. No cloud operations or remote agent changes performed.
+- The legacy runner has been replaced by the separate [Foundry Responses contract](foundry-orchestration.md). Management-only checks do not validate live Foundry execution. No cloud operations or remote agent changes performed.
 
 ## Reference contracts
 

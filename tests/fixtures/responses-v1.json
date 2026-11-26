@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "note": "Fictional responses; no recorded model output.",
+  "call": {
+    "status": "completed",
+    "output": [
+      {
+        "type": "function_call",
+        "id": "fc_demo",
+        "call_id": "call_demo",
+        "name": "get_cost_summary",
+        "arguments": "{\"lookback_days\":30}",
+        "status": "completed"
+      }
+    ]
+  },
+  "final": {
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "id": "msg_demo",
+        "role": "assistant",
+        "status": "completed",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "Synthetic advisory: EUR 100 actual cost.",
+            "annotations": []
+          }
+        ]
+      }
+    ]
+  },
+  "failed": {
+    "status": "failed",
+    "output": []
+  },
+  "incomplete": {
+    "status": "incomplete",
+    "output": []
+  }
+}
