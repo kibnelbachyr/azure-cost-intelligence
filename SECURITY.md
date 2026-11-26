@@ -1,5 +1,5 @@
 # Security policy
-This is an experimental advisory-only prototype, not a supported production service. No released version or response-time SLA is established.
+This is an experimental advisory-only prototype, not a supported production service. The v0.1.0 experimental pre-release is published; no supported-version commitment or response-time SLA is established.
 
 Report suspected vulnerabilities privately via GitHub private vulnerability reporting if enabled, or contact the repository owner privately. If neither channel is available, request a private contact without including vulnerability details. Do not publish credentials, tenant identifiers, billing records, exploitable details or customer data in public issues. Provide affected commit, minimal synthetic reproduction, impact and proposed mitigation where possible.
 
