@@ -4,7 +4,7 @@ Experimental advisory-only MVP for Azure cloud economics. Combines actual cost d
 
 ## Architecture
 
-See the [architecture review](docs/architecture-review.md), [threat model](docs/threat-model.md), [security policy](SECURITY.md) and [experimental release gate](docs/release-readiness.md). No release or license decision has been made.
+See the [architecture review](docs/architecture-review.md), [threat model](docs/threat-model.md), [security policy](SECURITY.md) and [experimental release gate](docs/release-readiness.md). The owner has approved Apache-2.0; see [LICENSE](LICENSE). No release has been published.
 
 ```mermaid
 flowchart LR
@@ -66,4 +66,4 @@ Every question is independent, including interactive mode; restate the scope. Li
 - Management and Responses HTTP fixture coverage is not live Azure compatibility, actual billing accuracy, KQL verification or model quality.
 - Cost/Graph partial pages fail closed. No price catalog, realized-savings measurement, currency conversion or automated remediation.
 - Local bounds limit model requests and tool calls per question, not total runtime or all downstream SDK retries. Not an authenticated multi-tenant boundary.
-- No new license or release implied by this maintenance. See [illustrative example](examples/sample_responses.md).
+- Licensed under Apache-2.0; no experimental release published yet. See [illustrative example](examples/sample_responses.md).
