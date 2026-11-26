@@ -4,6 +4,8 @@ Experimental advisory-only MVP for Azure cloud economics. Combines actual cost d
 
 ## Architecture
 
+See the [architecture review](docs/architecture-review.md), [threat model](docs/threat-model.md), [security policy](SECURITY.md) and [experimental release gate](docs/release-readiness.md). No release or license decision has been made.
+
 ```mermaid
 flowchart LR
   A[Cost Management] --> D[Financial evidence]
@@ -56,7 +58,7 @@ python -m src.main --allow-live --interactive
 python -m examples.run_examples --allow-live
 ```
 
-Every question is independent, including interactive mode; restate the scope. Live calls may incur charges. The application requests store=false but this does not guarantee zero retention or regulatory compliance. Model output is advisory narrative, not verified financial truth.
+Every question is independent, including interactive mode; restate the scope. Live calls may incur charges. The application requests store=false but this does not guarantee zero retention or regulatory compliance. Model output is advisory narrative, not verified financial truth. Even a completed answer without tool calls may contain unsupported claims. Resource metadata, including tags, may be transmitted to Foundry; use only approved data. The CLI opt-in is not a library-level authorization control.
 
 ## Scope and limitations
 
