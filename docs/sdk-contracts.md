@@ -15,7 +15,7 @@ The versioned JSON in sdk_tests/fixtures/provider-responses-v1.json is fabricate
 
 ## Deliberate limits and decisions
 
-- Cost scope uses a leading slash; QueryTimePeriod receives UTC datetimes; "None" is sent explicitly for ungrouped aggregation, not assumed to exist as an SDK enum. Detected partial pages and malformed schemas fail closed.
+- Cost Management 5.0.0 uses the nested QueryResult.properties envelope and QueryComparisonExpression.values_property constructor. Cost scope uses a leading slash; QueryTimePeriod receives UTC datetimes; "None" is sent explicitly for ungrouped aggregation, not assumed to exist as an SDK enum. Detected partial pages and malformed schemas fail closed.
 - Advisor normalizes returned model properties and preserves unknown-period savings. Resource-group filter rejects malformed input.
 - Resource Graph explicitly requests object arrays, rejects partial/inconsistent results, and requires a disk to report Unattached and no managedBy before it becomes a candidate. This is a query contract, not verification of real KQL behavior or safety of deletion. No paging is implemented; large results may fail.
 - No live credentials, actual billing records, regional prices, provider accuracy, throttling, real authorization, or LLM quality are validated.

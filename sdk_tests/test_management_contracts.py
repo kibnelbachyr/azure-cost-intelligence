@@ -30,6 +30,12 @@ class FictionalCredential:
         return AccessToken("fictional-test-token", 4102444800)
 
 
+class FixtureResponse(RequestsTransportResponse):
+    # New code-generated SDKs use response.json(); older ones use body/text.
+    def json(self):
+        return json.loads(self.body())
+
+
 class FixtureTransport(RequestsTransport):
     def __init__(self, *responses):
         super().__init__()
@@ -52,7 +58,7 @@ class FixtureTransport(RequestsTransport):
         response._content = json.dumps(body).encode("utf-8")
         response.encoding = "utf-8"
         response.url = request.url
-        return RequestsTransportResponse(request, response)
+        return FixtureResponse(request, response)
 
 
 class ManagementContracts(unittest.TestCase):

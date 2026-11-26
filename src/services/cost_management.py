@@ -76,17 +76,24 @@ class CostManagementService:
             raise
 
         # Do not silently report a partial page as total actual spend.
-        if getattr(result, "next_link", None):
+        if result is None:
+            return []  # SDK maps HTTP 204 to None.
+        props = result.properties
+        if props is None:
+            raise ValueError("Cost result is missing its properties envelope.")
+        if props.next_link:
             raise ValueError("Paginated cost result requires explicit pagination support.")
-        if result is None or not result.rows:
+        if props.rows is None:
+            raise ValueError("Cost result is missing its rows.")
+        if not props.rows:
             return []
 
-        columns = [c.name for c in (result.columns or [])]
+        columns = [c.name for c in (props.columns or [])]
         if len(columns) != len(set(columns)) or not {"Cost", "Currency"}.issubset(columns):
             raise ValueError("Cost result columns are missing or ambiguous.")
-        if any(len(row) != len(columns) for row in result.rows):
+        if any(len(row) != len(columns) for row in props.rows):
             raise ValueError("Cost result row does not match the column schema.")
-        return [dict(zip(columns, row)) for row in result.rows]
+        return [dict(zip(columns, row)) for row in props.rows]
 
     # ── public API ────────────────────────────────────────────────────────────
 
@@ -226,7 +233,7 @@ class CostManagementService:
                     tags=QueryComparisonExpression(
                         name=tag_name,
                         operator="In",
-                        values=[tag_value],
+                        values_property=[tag_value],
                     )
                 ),
             ),
