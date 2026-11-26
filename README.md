@@ -32,10 +32,15 @@ python scripts/verify_dependency_lock.py
 python -m pip check
 python -m unittest discover -s sdk_tests -v
 python -m unittest discover -s foundry_tests -v
+python -m evaluation.run --repeat 3 --output evaluation-report.json
 python -m src.main --help
 ```
 
 The first suite uses only the standard library. The two installed-SDK suites replay fabricated HTTP responses, not Azure data. Installation needs PyPI access; tests use fake tokens and transports. See [financial evidence](docs/financial-evidence.md), [management SDK contracts](docs/sdk-contracts.md) and [Foundry orchestration](docs/foundry-orchestration.md). The complete application version set is pinned for Python 3.11/Linux x86_64; CI audits the lock against the PyPI advisory database. See [dependency security and identity](docs/dependency-security.md).
+
+## FinOps evaluation
+
+The versioned [conformance evaluation](docs/evaluation.md) runs 18 full application-path synthetic HTTP scenarios and one normalized-engine-only case, three repetitions each. It checks structured financial evidence, scope, request traces, unsafe tool rejection and failure outcomes. CI requires every assertion and repeat to pass and uploads a machine-readable report. Scripted model responses are not live-model accuracy evidence.
 
 ## Optional live configuration (not validated)
 

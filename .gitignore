@@ -40,3 +40,8 @@ logs/
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Generated synthetic evaluation report and CI environments
+/evaluation-report.json
+/.venv-ci/
+/.venv-audit/
