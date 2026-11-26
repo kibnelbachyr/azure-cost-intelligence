@@ -25,20 +25,23 @@ Python 3.11:
 
 ```sh
 python -m unittest discover -s tests -v
-python -m pip install -r requirements.txt
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install --no-deps -r requirements.lock.txt
+python scripts/verify_dependency_lock.py
 python -m pip check
 python -m unittest discover -s sdk_tests -v
 python -m unittest discover -s foundry_tests -v
 python -m src.main --help
 ```
 
-The first suite uses only the standard library. The two installed-SDK suites replay fabricated HTTP responses, not Azure data. Installation needs PyPI access; tests use fake tokens and transports. See [financial evidence](docs/financial-evidence.md), [management SDK contracts](docs/sdk-contracts.md) and [Foundry orchestration](docs/foundry-orchestration.md). Direct versions are selected; full lock and vulnerability audit remain separate work.
+The first suite uses only the standard library. The two installed-SDK suites replay fabricated HTTP responses, not Azure data. Installation needs PyPI access; tests use fake tokens and transports. See [financial evidence](docs/financial-evidence.md), [management SDK contracts](docs/sdk-contracts.md) and [Foundry orchestration](docs/foundry-orchestration.md). The complete application version set is pinned for Python 3.11/Linux x86_64; CI audits the lock against the PyPI advisory database. See [dependency security and identity](docs/dependency-security.md).
 
 ## Optional live configuration (not validated)
 
 Use an existing authorized public-Azure Foundry project and supported model deployment. No provisioning is automated; the former hub setup script is intentionally disabled. Review [Foundry SDK](https://learn.microsoft.com/en-us/python/api/overview/azure/ai-projects-readme) and role requirements with the owner. Use least-privilege read permissions for Cost Management, Advisor and Resource Graph, and authorized inference permissions on the project. Do not grant broad write roles to the runtime identity.
 
-Copy .env.example into an ignored .env file or use an approved secret store. Set the configured subscription, Entra identity, AZURE_AI_PROJECT_ENDPOINT (HTTPS project endpoint, not a connection string), and deployment name. Check data handling before sending any billing/resource metadata to the model. Never commit credentials. Old connection strings and hosted thread IDs are no longer supported.
+Copy .env.example into an ignored .env file or use an approved secret store. Use explicit managed identity or service principal (no developer credential fallback). Set the configured subscription, Entra identity, AZURE_AI_PROJECT_ENDPOINT (HTTPS project endpoint, not a connection string), and deployment name. Check data handling before sending any billing/resource metadata to the model. Never commit credentials. Old connection strings and hosted thread IDs are no longer supported.
 
 Only after explicit authorization and budget approval:
 

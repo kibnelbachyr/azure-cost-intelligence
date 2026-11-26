@@ -7,7 +7,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Optional
 
-from pydantic import Field, model_validator, field_validator
+from pydantic import Field, SecretStr, model_validator, field_validator
 import re
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,13 +18,14 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        hide_input_in_errors=True,
     )
 
     # ── Azure identity ────────────────────────────────────────────────────────
-    azure_tenant_id: str = Field(..., description="Azure Active Directory tenant ID")
+    azure_tenant_id: Optional[str] = Field(None, description="Entra tenant ID for service-principal mode")
     azure_subscription_id: str = Field(..., description="Default subscription to analyse")
     azure_client_id: Optional[str] = Field(None, description="Service principal client ID")
-    azure_client_secret: Optional[str] = Field(None, description="Service principal secret")
+    azure_client_secret: Optional[SecretStr] = Field(None, description="Service principal secret", repr=False)
     use_managed_identity: bool = Field(False, description="Use Managed Identity instead of SP")
 
     # ── Azure AI Foundry ──────────────────────────────────────────────────────
@@ -52,12 +53,16 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _validate_identity(self) -> "Settings":
-        if not self.use_managed_identity:
-            if not self.azure_client_id or not self.azure_client_secret:
-                raise ValueError(
-                    "Set USE_MANAGED_IDENTITY=true or provide "
-                    "AZURE_CLIENT_ID and AZURE_CLIENT_SECRET."
-                )
+        for name in ("azure_tenant_id", "azure_client_id"):
+            value = getattr(self, name)
+            if value is not None:
+                setattr(self, name, value.strip() or None)
+        secret = self.azure_client_secret.get_secret_value() if self.azure_client_secret else ""
+        if self.use_managed_identity:
+            if secret:
+                raise ValueError("Remove AZURE_CLIENT_SECRET in managed identity mode.")
+        elif not (self.azure_tenant_id and self.azure_client_id and secret):
+            raise ValueError("Service-principal mode requires tenant ID, client ID and secret.")
         return self
 
 

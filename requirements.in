@@ -1,0 +1,13 @@
+# Direct application inputs; resolve and review changes in a fresh Python 3.11 Linux x86_64 venv.
+azure-identity==1.27.0
+azure-mgmt-costmanagement==5.0.0
+azure-mgmt-advisor==9.0.1
+azure-mgmt-resourcegraph==8.0.1
+azure-ai-projects==2.11.0
+openai==3.59.0
+python-dotenv>=1.0.0
+pydantic>=2.7.0,<3
+pydantic-settings>=2.3.0,<3
+tenacity>=8.3.0,<10
+rich>=13.7.0
+httpx2==2.16.2

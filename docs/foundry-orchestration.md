@@ -2,7 +2,7 @@
 
 ## Decision
 
-Use endpoint-based AIProjectClient.get_openai_client() and the Responses API with model deployment name, instead of remote agent CRUD and classic thread/run polling. The application supplies SYSTEM_PROMPT on every model request. No stale hosted agent reuse, creation, deletion or migration. Direct versions: azure-ai-projects 2.11.0 and openai 3.59.0. Full dependency resolution and vulnerability audit are separate gates.
+Use endpoint-based AIProjectClient.get_openai_client() and the Responses API with model deployment name, instead of remote agent CRUD and classic thread/run polling. The application supplies SYSTEM_PROMPT on every model request. No stale hosted agent reuse, creation, deletion or migration. Direct versions: azure-ai-projects 2.11.0 and openai 3.59.0. See [dependency security](dependency-security.md) for the application version lock and advisory gate. The live composition root shares one explicit credential across the four clients.
 
 Each question starts an independent context. Replay all output items (including encrypted reasoning if returned) and function results within the question; store=false is requested, not a guarantee of zero provider retention. No previous_response_id or cross-question history. Interactive mode deliberately requires restating scope.
 

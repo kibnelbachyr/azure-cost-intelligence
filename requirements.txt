@@ -1,5 +1,1 @@
-# Management adapters and modern Foundry Responses client: direct version pins.
--r requirements-management.txt
-azure-ai-projects==2.11.0
-openai==3.59.0
-rich>=13.7.0
+-r requirements.lock.txt

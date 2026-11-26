@@ -2,7 +2,7 @@
 
 ## Scope
 
-A pinned direct-version baseline for the three Azure management SDKs: Cost Management 5.0.0, Advisor 9.0.1 and Resource Graph 8.0.1; Azure Identity 1.27.0. This is not a full dependency lock or vulnerability audit. The standard-library tests remain separate from the installed-SDK checks. CI installs packages from PyPI, then executes the synthetic fixture tests with no Azure account, real token or network transport.
+A pinned direct-version baseline for the three Azure management SDKs: Cost Management 5.0.0, Advisor 9.0.1 and Resource Graph 8.0.1; Azure Identity 1.27.0. Management-only inputs are constrained by the [application version lock and audit](dependency-security.md). The standard-library tests remain separate from the installed-SDK checks. CI installs packages from PyPI, then executes the synthetic fixture tests with no Azure account, real token or network transport.
 
 ```sh
 python -m unittest discover -s tests -v

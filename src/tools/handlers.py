@@ -24,14 +24,8 @@ class ToolHandlers:
     """
 
     def __init__(self, *, cost=None, advisor=None, graph=None, subscription_id: str | None = None) -> None:
-        # All dependencies must be injected together in offline mode.
-        if cost is None and advisor is None and graph is None and subscription_id is None:
-            from ..config import get_settings
-            from ..services.cost_management import CostManagementService
-            from ..services.advisor import AdvisorService
-            from ..services.resource_graph import ResourceGraphService
-            subscription_id = get_settings().azure_subscription_id
-            cost, advisor, graph = CostManagementService(), AdvisorService(), ResourceGraphService()
+        # The live composition root owns credentials and clients.
+        # Offline callers inject all services; no implicit credential creation.
         if any(service is None for service in (cost, advisor, graph)) or not subscription_id:
             raise ValueError("Provide all three services and the configured subscription together.")
         self._cost, self._advisor, self._graph = cost, advisor, graph

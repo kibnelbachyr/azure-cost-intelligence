@@ -97,20 +97,22 @@ class AgentRunner:
     """
 
     def __init__(self, *, provider: ResponseProvider | None = None, handlers: Dispatcher | None = None):
+        self._resources = None
         if provider is None and handlers is None:
-            from .foundry import FoundryResponsesProvider
-            from ..tools.handlers import ToolHandlers
-            handlers = ToolHandlers()
-            provider = FoundryResponsesProvider.from_settings()
+            from .runtime import build_live_runtime
+            provider, handlers, self._resources = build_live_runtime()
         elif provider is None or handlers is None:
             raise ValueError("Inject both provider and handlers together.")
         self._provider = provider
         self._handlers = handlers
 
     def close(self):
-        close = getattr(self._provider, "close", None)
-        if close:
-            close()
+        if self._resources is not None:
+            self._resources.close()
+        else:
+            close = getattr(self._provider, "close", None)
+            if close:
+                close()
 
     def __enter__(self):
         return self

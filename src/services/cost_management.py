@@ -11,7 +11,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from azure.core.exceptions import HttpResponseError
-from azure.identity import DefaultAzureCredential, ClientSecretCredential
 from azure.mgmt.costmanagement import CostManagementClient
 from azure.mgmt.costmanagement.models import (
     QueryDefinition,
@@ -23,20 +22,10 @@ from azure.mgmt.costmanagement.models import (
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from ..config import get_settings
+from ..config.identity import build_credential
 from ..financial_evidence import validated_cost_rows
 
 log = logging.getLogger(__name__)
-
-
-def _build_credential():
-    cfg = get_settings()
-    if cfg.use_managed_identity:
-        return DefaultAzureCredential()
-    return ClientSecretCredential(
-        tenant_id=cfg.azure_tenant_id,
-        client_id=cfg.azure_client_id,
-        client_secret=cfg.azure_client_secret,
-    )
 
 
 def _subscription_scope(subscription_id: str) -> str:
@@ -54,9 +43,32 @@ class CostManagementService:
     Preserve a single explicit provider currency; reject missing/mixed currency.
     """
 
-    def __init__(self, *, client=None, settings=None) -> None:
+    def __init__(self, *, client=None, settings=None, credential=None) -> None:
         self._cfg = settings if settings is not None else get_settings()
-        self._client = client if client is not None else CostManagementClient(credential=_build_credential())
+        self._owned_credential = None
+        if client is not None:
+            if credential is not None:
+                raise ValueError("Inject a client or a credential, not both.")
+            self._client = client
+            self._owns_client = False
+        else:
+            self._owns_client = True
+            if credential is None:
+                credential = self._owned_credential = build_credential(self._cfg)
+            try:
+                self._client = CostManagementClient(credential=credential)
+            except Exception:
+                if self._owned_credential is not None:
+                    self._owned_credential.close()
+                raise
+
+    def close(self):
+        try:
+            if self._owns_client:
+                self._client.close()
+        finally:
+            if self._owned_credential is not None:
+                self._owned_credential.close()
 
     # ── helpers ───────────────────────────────────────────────────────────────
 
@@ -72,7 +84,7 @@ class CostManagementService:
         try:
             result = self._client.query.usage(scope=scope, parameters=definition)
         except HttpResponseError as exc:
-            log.error("Cost Management query failed for scope %s: %s", scope, exc.message)
+            log.warning("Cost Management query failed (HTTP %s)", exc.status_code)
             raise
 
         # Do not silently report a partial page as total actual spend.
