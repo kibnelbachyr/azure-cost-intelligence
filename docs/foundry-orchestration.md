@@ -16,7 +16,7 @@ CLI and example entrypoints require --allow-live; legacy automatic provisioning 
 
 ## Verification
 
-Standard-library deterministic fixtures exercise orchestration, malformed calls and failures. Installed-SDK tests use the real AIProjectClient and OpenAI client with a fictional credential and httpx.MockTransport to inspect actual serialized Responses requests and deserialize synthetic responses. Socket/DNS guards supplement the mock transport; not an OS network sandbox. CI installs dependencies from PyPI, no Azure calls. Neither live inference, model quality, model availability, actual financial accuracy nor provider retention is validated.
+Standard-library deterministic fixtures exercise orchestration, malformed calls and failures. Installed-SDK tests use the real AIProjectClient and OpenAI client with a fictional credential and httpx2.MockTransport to inspect actual serialized Responses requests and deserialize synthetic responses. Socket/DNS guards supplement the mock transport; not an OS network sandbox. CI installs dependencies from PyPI, no Azure calls. Neither live inference, model quality, model availability, actual financial accuracy nor provider retention is validated.
 
 ## References
 

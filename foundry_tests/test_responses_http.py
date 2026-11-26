@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import httpx
+import httpx2 as httpx
 from azure.ai.projects import AIProjectClient
 from azure.core.credentials import AccessToken
 
