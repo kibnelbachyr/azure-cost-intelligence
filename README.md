@@ -1,6 +1,25 @@
 # Azure Cost Intelligence
 
-Experimental advisory-only MVP for Azure cloud economics. Combines actual cost data, Advisor opportunities and Resource Graph observations with a deterministic financial evidence layer and Microsoft Foundry Responses-based explanation. Not production ready. No automatic remediation; an owner must validate any financial estimate and approve any action independently.
+An experimental advisory-only tool for FinOps practitioners and cloud engineers evaluating Azure cost recommendations. Combines actual cost data, Advisor opportunities and Resource Graph observations with a deterministic financial evidence layer and Microsoft Foundry Responses-based explanation. Not production ready. No automatic remediation; an owner must validate any financial estimate and approve any action independently.
+
+## Quickstart — evaluate fictional cost data
+
+Use Linux x86_64 with Python 3.11 to reproduce the published version. No Azure account or model credentials are needed for the following tests; package installation requires PyPI access.
+
+```sh
+git clone https://github.com/kibnelbachyr/azure-cost-intelligence.git
+cd azure-cost-intelligence
+git checkout v0.1.0
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install --no-deps -r requirements.lock.txt
+python -m pip check
+python -m evaluation.run --repeat 3 --output evaluation-report.json
+```
+
+Expected release result: 19/19 fictional scenarios pass, across 57 scenario executions and 507 checks. The JSON report is evidence of conformance against scripted responses, not actual savings or model quality. The fastest dependency-free alternative is `python -m unittest discover -s tests -v` from the checkout.
+
+[Published experimental release](https://github.com/kibnelbachyr/azure-cost-intelligence/releases/tag/v0.1.0) · [Release CI](https://github.com/kibnelbachyr/azure-cost-intelligence/actions/runs/45905332238) · [Release evidence on main](docs/evidence/v0.1.0.md).
 
 ## Architecture
 
@@ -21,9 +40,9 @@ flowchart LR
 
 The model cannot directly invoke Azure operations. The application exposes seven read-oriented tools, rejects unrecognized or malformed calls, constrains scope, caps requests and tool calls, and fails closed on errors. Actual spend is not savings. Unknown price, period or currency remains unknown; potentially overlapping savings are not summed.
 
-## Reproduce without Azure credentials
+## Full verification without Azure credentials
 
-Python 3.11:
+Python 3.11 on Linux x86_64; use a fresh checkout and environment:
 
 ```sh
 python -m unittest discover -s tests -v
