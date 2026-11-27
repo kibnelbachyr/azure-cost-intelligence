@@ -1,5 +1,9 @@
 # Azure Cost Intelligence
 
+![Azure Cost Intelligence — Cloud economics / FinOps / Evidence](docs/assets/engineering-banner.svg)
+
+[![Offline verification](https://github.com/kibnelbachyr/azure-cost-intelligence/actions/workflows/offline-ci.yml/badge.svg)](https://github.com/kibnelbachyr/azure-cost-intelligence/actions/workflows/offline-ci.yml)
+
 An experimental advisory-only tool for FinOps practitioners and cloud engineers evaluating Azure cost recommendations. Combines actual cost data, Advisor opportunities and Resource Graph observations with a deterministic financial evidence layer and Microsoft Foundry Responses-based explanation. Not production ready. No automatic remediation; an owner must validate any financial estimate and approve any action independently.
 
 ## Quickstart — evaluate fictional cost data
@@ -35,7 +39,13 @@ flowchart LR
   F <--> G[Bounded local Responses loop]
   G <--> H[Foundry model deployment]
   G --> I[Advisory narrative]
-  I --> J[Human review]
+  I --> J{Human review}
+    classDef component fill:#152436,stroke:#7296b6,color:#f3f6f9;
+    classDef decision fill:#152436,stroke:#78c9c1,color:#f3f6f9,stroke-width:2px;
+    classDef endpoint fill:#243344,stroke:#9db0c4,color:#f3f6f9;
+    class D,E,F,G,I component;
+    class J decision;
+    class A,B,C,H endpoint;
 ```
 
 The model cannot directly invoke Azure operations. The application exposes seven read-oriented tools, rejects unrecognized or malformed calls, constrains scope, caps requests and tool calls, and fails closed on errors. Actual spend is not savings. Unknown price, period or currency remains unknown; potentially overlapping savings are not summed.
@@ -67,7 +77,7 @@ The versioned [conformance evaluation](docs/evaluation.md) runs 18 full applicat
 
 Use an existing authorized public-Azure Foundry project and supported model deployment. No provisioning is automated; the former hub setup script is intentionally disabled. Review [Foundry SDK](https://learn.microsoft.com/en-us/python/api/overview/azure/ai-projects-readme) and role requirements with the owner. Use least-privilege read permissions for Cost Management, Advisor and Resource Graph, and authorized inference permissions on the project. Do not grant broad write roles to the runtime identity.
 
-Copy .env.example into an ignored .env file or use an approved secret store. Use explicit managed identity or service principal (no developer credential fallback). Set the configured subscription, Entra identity, AZURE_AI_PROJECT_ENDPOINT (HTTPS project endpoint, not a connection string), and deployment name. Check data handling before sending any billing/resource metadata to the model. Never commit credentials. Old connection strings and hosted thread IDs are no longer supported.
+Copy .env.example into an ignored .env file or use an approved secret store. Use explicit managed identity or service principal (no developer credential fallback). Set `AZURE_SUBSCRIPTION_ID`, `AZURE_AI_PROJECT_ENDPOINT` (HTTPS project endpoint, not a connection string), and `AZURE_OPENAI_DEPLOYMENT_NAME`. For managed identity set `USE_MANAGED_IDENTITY=true` and remove `AZURE_CLIENT_SECRET`; otherwise supply `AZURE_TENANT_ID`, `AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET` through an approved secret mechanism. Check data handling before sending any billing/resource metadata to the model. Never commit credentials. Old connection strings and hosted thread IDs are no longer supported.
 
 Only after explicit authorization and budget approval:
 
